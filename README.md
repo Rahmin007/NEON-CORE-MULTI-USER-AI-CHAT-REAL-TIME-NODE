@@ -12,10 +12,15 @@ This version turns the original per-user AI chat into a real multi-user public c
 - Online-user presence is broadcast in real time.
 - USER, MODERATOR and ADMIN have different permissions.
 - Moderator console: delete messages, warn users, mute users for 10 minutes, view live users.
-- Admin console: manage users, change roles, enable/disable accounts.
-- Activity/audit logs remain available to moderators and admins.
+- Admin console: manage users, change roles, enable/disable accounts, and view the full activity log.
+- Activity/audit logs (every login, chat message, moderation action, and tracked frontend interaction) are stored in MongoDB and visible to ADMIN only.
 - Existing database gets a lightweight SQLite migration for `muted_until`.
 - The AI key remains server-side in `.env`.
+
+## Data storage
+
+- **SQLite** (`chat.db`) — users and chat messages. Managed automatically via SQLAlchemy; no setup beyond `DATABASE_URL` in `.env`.
+- **MongoDB** — the activity/audit log (`activity_logs` collection). Requires a reachable MongoDB instance — either a free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster or a local instance (e.g. `docker run -d -p 27017:27017 mongo:7`). Set `MONGODB_URI` and `MONGODB_DB_NAME` in `.env`.
 
 ## Roles
 
@@ -30,13 +35,13 @@ This version turns the original per-user AI chat into a real multi-user public c
 - Delete inappropriate messages.
 - Warn users.
 - Mute users for 10 minutes.
-- Access activity logs.
 
 ### ADMIN
 - Everything a MODERATOR can do.
 - View all users.
 - Change USER/MODERATOR roles.
 - Enable/disable accounts.
+- View the full activity log.
 - Full administration access.
 
 ### AI
@@ -62,12 +67,22 @@ python -m pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Put your real OpenRouter key in `.env`:
+Fill in the real values in `.env`:
 
 ```text
 OPENROUTER_API_KEY=your_real_key
 OPENROUTER_MODEL=openrouter/free
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-host>/?retryWrites=true&w=majority
+MONGODB_DB_NAME=neon_core
 ```
+
+`MONGODB_URI` can also point at a local instance for development — run one with:
+
+```powershell
+docker run -d --name neon-core-mongo -p 27017:27017 mongo:7
+```
+
+then set `MONGODB_URI=mongodb://localhost:27017` in `.env`.
 
 Then:
 
@@ -104,7 +119,8 @@ Open `http://127.0.0.1:8000`.
 - `GET /api/v1/admin/users` — admin
 - `PATCH /api/v1/admin/users/{id}/role` — admin
 - `PATCH /api/v1/admin/users/{id}/status` — admin
-- `GET /api/v1/logs/` — moderator/admin
+- `GET /api/v1/logs/` — admin only
+- `POST /api/v1/logs/event` — any authenticated role; generic event tracking used by the frontend
 
 ## Production note
 
