@@ -21,7 +21,7 @@ def create_user(payload: AdminUserCreate, request: Request, current_user: User =
         raise HTTPException(status_code=409, detail="Username or email already exists.")
     user = User(username=payload.username, email=str(payload.email), hashed_password=get_password_hash(payload.password), role=payload.role)
     db.add(user); db.commit(); db.refresh(user)
-    log_activity(db, current_user.id, "ADMIN_CREATE_USER", f"Created user {user.username} as {user.role.value}", request.client.host if request.client else None)
+    log_activity(current_user.id, current_user.username, "ADMIN_CREATE_USER", f"Created user {user.username} as {user.role.value}", request.client.host if request.client else None)
     return user
 
 @router.patch("/users/{user_id}/role", response_model=UserResponse, dependencies=[Depends(admin_only)])
@@ -30,7 +30,7 @@ def update_role(user_id: int, payload: UserRoleUpdate, request: Request, current
     if not user: raise HTTPException(404, "User not found.")
     user.role = payload.role
     db.commit(); db.refresh(user)
-    log_activity(db, current_user.id, "ADMIN_CHANGE_ROLE", f"User {user.username} -> {user.role.value}", request.client.host if request.client else None)
+    log_activity(current_user.id, current_user.username, "ADMIN_CHANGE_ROLE", f"User {user.username} -> {user.role.value}", request.client.host if request.client else None)
     return user
 
 @router.patch("/users/{user_id}/status", response_model=UserResponse, dependencies=[Depends(admin_only)])
@@ -39,5 +39,5 @@ def update_status(user_id: int, payload: UserStatusUpdate, request: Request, cur
     if not user: raise HTTPException(404, "User not found.")
     user.is_active = payload.is_active
     db.commit(); db.refresh(user)
-    log_activity(db, current_user.id, "ADMIN_CHANGE_STATUS", f"User {user.username} active={user.is_active}", request.client.host if request.client else None)
+    log_activity(current_user.id, current_user.username, "ADMIN_CHANGE_STATUS", f"User {user.username} active={user.is_active}", request.client.host if request.client else None)
     return user

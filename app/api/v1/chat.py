@@ -60,7 +60,7 @@ async def send_message(payload: ChatRequest, request: Request, current_user: Use
     user_msg = ChatMessage(user_id=current_user.id, sender_role=current_user.role.value, message=text)
     db.add(user_msg); db.commit(); db.refresh(user_msg)
     await manager.broadcast({"type": "message", "message": serialize_message(db, user_msg)})
-    log_activity(db, current_user.id, "CHAT_MESSAGE", f"Prompt length: {len(text)}", request.client.host if request.client else None)
+    log_activity(current_user.id, current_user.username, "CHAT_MESSAGE", f"Prompt length: {len(text)}", request.client.host if request.client else None)
 
     if text.lower().startswith("@ai"):
         prompt = text[3:].strip()
@@ -116,7 +116,7 @@ async def websocket_chat(websocket: WebSocket):
             msg = ChatMessage(user_id=user.id, sender_role=user.role.value, message=text)
             db.add(msg); db.commit(); db.refresh(msg)
             await manager.broadcast({"type": "message", "message": serialize_message(db, msg)})
-            log_activity(db, user.id, "CHAT_MESSAGE", f"Message length: {len(text)}", None)
+            log_activity(user.id, user.username, "CHAT_MESSAGE", f"Message length: {len(text)}", None)
 
             if text.lower().startswith("@ai"):
                 prompt = text[3:].strip()
@@ -144,7 +144,7 @@ async def delete_message(message_id: int, request: Request, current_user: User =
     if not msg:
         raise HTTPException(404, "Message not found.")
     db.delete(msg); db.commit()
-    log_activity(db, current_user.id, "MOD_DELETE_MESSAGE", f"Deleted message {message_id}", request.client.host if request.client else None)
+    log_activity(current_user.id, current_user.username, "MOD_DELETE_MESSAGE", f"Deleted message {message_id}", request.client.host if request.client else None)
     await manager.broadcast({"type": "message_deleted", "message_id": message_id})
     return {"ok": True}
 
@@ -157,7 +157,7 @@ async def mute_user(user_id: int, payload: ModerationAction, request: Request, c
         raise HTTPException(403, "Moderators cannot mute administrators.")
     user.muted_until = datetime.now(timezone.utc) + timedelta(minutes=10)
     db.commit()
-    log_activity(db, current_user.id, "MOD_MUTE_USER", f"Muted {user.username} for 10 minutes. {payload.reason}", request.client.host if request.client else None)
+    log_activity(current_user.id, current_user.username, "MOD_MUTE_USER", f"Muted {user.username} for 10 minutes. {payload.reason}", request.client.host if request.client else None)
     await manager.broadcast({"type": "moderation", "message": f"{user.username} has been muted for 10 minutes."})
     return {"ok": True, "muted_until": user.muted_until}
 
@@ -166,5 +166,5 @@ async def mute_user(user_id: int, payload: ModerationAction, request: Request, c
 async def warn_user(user_id: int, payload: ModerationAction, request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if not user: raise HTTPException(404, "User not found.")
-    log_activity(db, current_user.id, "MOD_WARN_USER", f"Warned {user.username}. {payload.reason}", request.client.host if request.client else None)
+    log_activity(current_user.id, current_user.username, "MOD_WARN_USER", f"Warned {user.username}. {payload.reason}", request.client.host if request.client else None)
     return {"ok": True}
