@@ -20,5 +20,4 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     muted_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    logs = relationship("ActivityLog", back_populates="user", cascade="all, delete-orphan")
     chats = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")

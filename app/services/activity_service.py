@@ -1,9 +1,28 @@
-from sqlalchemy.orm import Session
-from app.models.activity_log import ActivityLog
+import logging
+from datetime import datetime, timezone
 
-def log_activity(db: Session, user_id: int | None, action: str, details: str | None = None, ip_address: str | None = None):
-    entry = ActivityLog(user_id=user_id, action=action, details=details, ip_address=ip_address)
-    db.add(entry)
-    db.commit()
-    db.refresh(entry)
-    return entry
+from app.db.mongo import activity_logs
+
+logger = logging.getLogger(__name__)
+
+
+def log_activity(
+    user_id: int | None,
+    username: str | None,
+    action: str,
+    details: dict | str | None = None,
+    ip_address: str | None = None,
+) -> None:
+    try:
+        activity_logs.insert_one(
+            {
+                "user_id": user_id,
+                "username": username,
+                "action": action,
+                "details": details,
+                "ip_address": ip_address,
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
+    except Exception:
+        logger.exception("Failed to write activity log for action=%s", action)

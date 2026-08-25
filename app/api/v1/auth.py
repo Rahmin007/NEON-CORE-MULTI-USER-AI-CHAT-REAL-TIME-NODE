@@ -20,17 +20,17 @@ def register(payload: UserCreate, request: Request, db: Session = Depends(get_db
     db.add(user)
     db.commit()
     db.refresh(user)
-    log_activity(db, user.id, "REGISTER", "Account created", request.client.host if request.client else None)
+    log_activity(user.id, user.username, "REGISTER", "Account created", request.client.host if request.client else None)
     return user
 
 @router.post("/login", response_model=Token)
 def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.username == form_data.username))
     if not user or not verify_password(form_data.password, user.hashed_password):
-        log_activity(db, user.id if user else None, "LOGIN_FAILED", f"Username: {form_data.username}", request.client.host if request.client else None)
+        log_activity(user.id if user else None, user.username if user else form_data.username, "LOGIN_FAILED", f"Attempted username: {form_data.username}", request.client.host if request.client else None)
         raise HTTPException(status_code=401, detail="Incorrect username or password.", headers={"WWW-Authenticate": "Bearer"})
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is disabled.")
     token = create_access_token({"sub": str(user.id), "role": user.role.value})
-    log_activity(db, user.id, "LOGIN_SUCCESS", None, request.client.host if request.client else None)
+    log_activity(user.id, user.username, "LOGIN_SUCCESS", None, request.client.host if request.client else None)
     return {"access_token": token, "token_type": "bearer"}

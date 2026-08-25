@@ -7,12 +7,14 @@ from fastapi.responses import FileResponse
 
 from app.api.v1 import activity_logs, admin, auth, chat, users
 from app.core.config import settings
+from app.db.mongo import init_mongo_indexes
 from app.db.session import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    init_mongo_indexes()
     yield
 
 

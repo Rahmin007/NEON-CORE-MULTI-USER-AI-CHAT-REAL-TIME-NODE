@@ -13,7 +13,7 @@ class Base(DeclarativeBase):
 
 def init_db() -> None:
     # Import every model before create_all so all tables are registered on Base.metadata.
-    from app.models import ActivityLog, ChatMessage, User  # noqa: F401
+    from app.models import ChatMessage, User  # noqa: F401
     Base.metadata.create_all(bind=engine)
 
     # Lightweight development migration for existing SQLite databases.
@@ -25,7 +25,7 @@ def init_db() -> None:
                 conn.exec_driver_sql("ALTER TABLE users ADD COLUMN muted_until DATETIME")
 
     # Fail fast with a useful message instead of letting registration produce a vague 500.
-    required = {"users", "activity_logs", "chat_messages"}
+    required = {"users", "chat_messages"}
     actual = set(inspect(engine).get_table_names())
     missing = required - actual
     if missing:
