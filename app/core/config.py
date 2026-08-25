@@ -37,6 +37,8 @@ class Settings:
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
     OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "openrouter/free")
     ALLOW_ORIGINS: str = os.getenv("ALLOW_ORIGINS", "*")
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+    MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "neon_core")
 
 
 settings = Settings()
