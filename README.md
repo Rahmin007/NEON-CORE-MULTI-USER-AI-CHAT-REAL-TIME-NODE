@@ -1,14 +1,22 @@
 # NEON//CORE — Real-time Multi-User AI Chat
 
+[![Live demo](https://img.shields.io/badge/LIVE%20DEMO-neon--core--vert.vercel.app-00f6ff?style=for-the-badge)](https://neon-core-vert.vercel.app)
+[![CI](https://github.com/Rahmin007/NEON-CORE-MULTI-USER-AI-CHAT-REAL-TIME-NODE/actions/workflows/ci.yml/badge.svg)](https://github.com/Rahmin007/NEON-CORE-MULTI-USER-AI-CHAT-REAL-TIME-NODE/actions)
+
+**▶ Try it: [neon-core-vert.vercel.app](https://neon-core-vert.vercel.app)**. Register an account, then open the site in a second browser (or an incognito window) to chat with yourself in real time. Start a message with `@ai` to ask the AI.
+
+> The backend runs on a free server that sleeps when nobody is using it, so the first visit can take about 50 seconds to wake up.
+
 A public chat room where everyone sees each other's messages instantly, and an AI joins in when someone starts a message with `@ai`. Includes role-based moderation (warn, mute, delete), an admin console and a full activity log.
 
 | Layer | Tech |
 | --- | --- |
 | Frontend | React 18, Vite, React Router, Tailwind CSS, react-markdown |
 | Backend | Python, FastAPI, WebSockets, JWT (PyJWT), bcrypt |
-| Database | MongoDB (PyMongo async driver) — users, messages, activity log |
+| Database | MongoDB (PyMongo async driver): users, messages, warnings, activity log |
 | AI | Any model on OpenRouter (OpenAI-compatible API) |
-| Tests | Pytest (22 tests), Vitest + Testing Library, GitHub Actions CI |
+| Hosting | Vercel (frontend), Render (backend), MongoDB Atlas (database) |
+| Tests | Pytest (25 tests), Vitest + Testing Library, GitHub Actions CI |
 
 ## Features
 
@@ -23,7 +31,7 @@ A public chat room where everyone sees each other's messages instantly, and an A
   - **ADMIN:** everything a moderator can do, plus create users, change roles, enable or disable accounts, view stats, and read the activity log.
 - **Moderation takes effect instantly:**
   - A muted user's input is disabled with a countdown, but they can still read.
-  - Warnings pop up on the user's screen.
+  - Warnings appear as a dialog the user must acknowledge. They're saved in MongoDB, so users who were offline see them when they next log in.
   - Disabled accounts are disconnected immediately.
 - **Activity log in MongoDB:** logins, messages and moderation actions are recorded and filterable by action. Old entries expire automatically after 90 days (TTL index).
 - **Safety:**
@@ -49,13 +57,19 @@ frontend/                React app
   src/components/        messages, composer, online users, dialogs
   src/pages/             login/register, lobby, console, 404
 render.yaml              one-click backend deploy on Render
+START-HERE.bat           one-click local start on Windows
 ```
 
 ## Run locally
 
-You need **Python 3.11+**, **Node.js 20.19+** and **MongoDB**. For MongoDB, use a free Atlas cluster (see Deploy) or run it locally with `docker run -d -p 27017:27017 mongo:7`.
+**Easiest (Windows):** double-click **`START-HERE.bat`**.
+- It installs everything, starts the backend and frontend, and opens http://localhost:5173.
+- Log in with `admin` / `admin12345`.
+- It uses a temporary in-memory database, so data resets when you close it.
 
-**Backend** (terminal 1):
+**Manual setup:** you need **Python 3.11+**, **Node.js 20.19+** and **MongoDB**. For MongoDB, use a free Atlas cluster, or run it locally with `docker run -d -p 27017:27017 mongo:7`.
+
+Backend (terminal 1):
 
 ```bash
 cd backend
@@ -67,7 +81,7 @@ copy .env.example .env          # macOS/Linux: cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-**Frontend** (terminal 2):
+Frontend (terminal 2):
 
 ```bash
 cd frontend
@@ -81,11 +95,13 @@ Open http://localhost:5173. The admin account from `.env` is created automatical
 
 ## Deploy
 
-| Part | Service | Free tier notes |
+The live demo runs on free tiers:
+
+| Part | Service | Notes |
 | --- | --- | --- |
-| Database | MongoDB Atlas (M0) | 512 MB |
+| Database | MongoDB Atlas (M0) | 512 MB free |
 | Backend | Render web service | Sleeps after 15 min idle; first request then takes ~50 s |
-| Frontend | Vercel | — |
+| Frontend | Vercel | Root directory: `frontend`, env var `VITE_API_URL` |
 
 Step-by-step instructions: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 
@@ -95,6 +111,7 @@ Step-by-step instructions: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 | --- | --- | --- |
 | POST | `/api/v1/auth/register`, `/api/v1/auth/login` | anyone |
 | GET | `/api/v1/users/me` | signed in |
+| POST | `/api/v1/users/me/warnings/{id}/acknowledge` | signed in |
 | GET | `/api/v1/chat/history?limit=&before=` · `/api/v1/chat/online` | users |
 | WS | `/api/v1/chat/ws?token=<JWT>` | users |
 | POST | `/api/v1/chat/messages` | users |
