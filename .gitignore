@@ -1,8 +1,17 @@
-.env
+# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 .venv/
 venv/
-chat.db
 .pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Secrets & local files
+.env
+.env.local
+*.db
+.DS_Store
+.vercel
