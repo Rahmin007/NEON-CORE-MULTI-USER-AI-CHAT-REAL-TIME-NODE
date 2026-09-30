@@ -204,7 +204,7 @@ async def log_activity(
 def activity_out(doc: dict) -> dict:
     return {
         "id": str(doc["_id"]),
-        "user_id": doc.get("user_id"),
+        "user_id": str(doc["user_id"]) if doc.get("user_id") is not None else None,
         "username": doc.get("username"),
         "action": doc["action"],
         "details": doc.get("details"),
